@@ -45,35 +45,13 @@
         });
     </script>
     <style type="text/css">
-        body {
-            text-align: center;
-        }
+        body { text-align: center; }
 
-        div#pagebg {
-            margin: auto;
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            width: 657px;
-            height: 371px;
-            background: url(css/images/login/loginbg.jpg) no-repeat;
-            padding-top: 70px;
-        }
+        div#pagebg { margin: auto; position: absolute; top: 0; left: 0; bottom: 0; right: 0; width: 657px; height: 371px; background: url(css/images/login/loginbg.jpg) no-repeat; padding-top: 70px;  *left:30%;*top:50%;*margin-top:-185px;}
 
-        div#loginbg {
-            width: 300px;
-            float: right;
-            margin-right: 106px;
-            margin-top: 50px;
-        }
+        div#loginbg { width: 300px; float: right; margin-right: 106px; margin-top: 50px;width:400px\9; }
 
-            div#loginbg ul li {
-                list-style: none;
-                line-height: 60px;
-                text-align: center;
-            }
+        div#loginbg ul li { list-style: none; line-height: 60px; text-align: center;*line-height:69px\9; }
     </style>
 </head>
 <body>
@@ -92,9 +70,9 @@
                 </ul>
             </form>
         </div>
-         <p style="text-align: center; float:right;width:600px;margin-top:-3px; color:#fff; font-size: 14px;">安阳市公安局</p>
+        <p style="text-align: center; float: right; width: 600px; margin-top: -3px; color: #fff; font-size: 14px;">安阳市公安局</p>
         <div class="clearfix"></div>
-       
+
     </div>
 </body>
 </html>

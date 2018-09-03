@@ -223,10 +223,10 @@
                     //    if(row.status == 2)
 
                     //}
-                    if ((row.status == 1 && roleid == 8) || (row.status == 2 && roleid == 9) || (row.status == 3 && roleid == 4) || (row.status == 4 && roleid == 10)) {//费用审批
+                    if ((row.status == 1 && roleid == 8) || (row.status == 2 && roleid == 9) || (row.status == 3 && roleid == 4) || (row.status == 4 && roleid == 10) || (row.status >= 1 && row.status <= 4 && roleid == 6)) {//费用审批
                         str += $.formatString('<a href="javascript:void(0)" onclick="approverFun(\'{0}\');">费用审批</a>', row.id);
                     }
-                    if ((row.status != 1 && roleid == 8) || (row.status != 2 && roleid == 9) || (row.status != 3 && roleid == 4) || (row.status != 4 && roleid == 10) || (row.status != 5 && roleid == 2) || roleid == 6 || roleid == 7) {//显示详情
+                    if ((row.status != 1 && roleid == 8) || (row.status != 2 && roleid == 9) || (row.status != 3 && roleid == 4) || (row.status != 4 && roleid == 10) || (row.status != 5 && roleid == 2) || ((row.status<1 || row.status>5) && roleid == 6) || roleid == 7) {//显示详情
                         str += $.formatString('<a href="javascript:void(0);" onclick="viewFun(\'{0}\');">显示详情</a>', row.id);
                     }
                     if (row.status == 5 && roleid == 2) { //稽核审核生成费用

@@ -36,6 +36,29 @@
     </script>
     <%} %>
     <script type="text/javascript">
+        var adminAuditFun = function (id) {
+            /// <summary>申请审核</summary>
+            var dialog = parent.$.modalDialog({
+                title: '费用审核',
+                width: 800,
+                height: 600,
+                iconCls: 'ext-icon-page',
+                href: 'ProjectManager/dialogop/AuditProjectInfo_op.aspx?id=' + id,
+                buttons: [{
+                    text: '提交',
+                    handler: function () {
+                        parent.onFormSubmit(dialog, pjGrid);
+                    }
+                },
+                {
+                    text: '关闭',
+                    handler: function () {
+                        dialog.dialog('close');
+                    }
+                }
+                ]
+            });
+        };
         //添加项目申报
         var addFun = function (id) {
             var dialog = parent.$.modalDialog({
@@ -101,7 +124,27 @@
                 idField: 'id',
                 sortName: 'id',
                 sortOrder: 'desc',
-                columns: [[
+                columns: [[{
+                    title: '操作',
+                    field: 'action',
+                    width: '80',
+                    halign: 'center',
+                    align: 'center',
+                    formatter: function (value, row) {
+                        var str = '';
+                        if (row.status >= 1 &&row.status <= 4 && roleid == 6) {//项目审批:管理员项目审批功能
+                            str += $.formatString('<a href="javascript:void(0)" onclick="adminAuditFun(\'{0}\');">项目审批</a>', row.id);
+                        }
+                        if (row.status == 5 && roleid == 6) { //已完结申请可打印
+                            str += $.formatString('<a href="javascript:void(0)" onclick="viewProjectDetail(\'{0}\',\'{1}\');">打印申请表</a>', row.id, row.status);
+                        }
+                        if (row.status <=0 && roleid == 6) { //被退回和未提交查看详情
+                            str += $.formatString('<a href="javascript:void(0)" onclick="viewProjectDetail(\'{0}\',\'{1}\');">查看详情</a>', row.id, row.status);
+                        }
+                        return str;
+                    }
+                }
+                ,
                    {
                        width: '120',
                        title: '项目编号',
@@ -182,6 +225,8 @@
                     $(this).datagrid('tooltip', ['projectcontent']);
                     //取消全选
                     $(this).datagrid('unselectAll');
+                    if (roleid != 6)
+                        $(this).datagrid('hideColumn', 'action');
                 },
                 onDblClickRow: function (index, row) {
                     viewProjectDetail(row.id, row.status);

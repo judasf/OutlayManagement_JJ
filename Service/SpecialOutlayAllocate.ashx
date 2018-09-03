@@ -147,9 +147,9 @@ public class SpecialOutlayAllocate : IHttpHandler, IRequiresSessionState
                 case "2"://稽核员
                     list.Add(" status=5 ");
                     break;
-                case "6"://管理员
-                    list.Add(" status=6");
-                    break;
+                    //case "6"://管理员
+                    //    list.Add(" status=6");
+                    //    break;
             }
 
         }
@@ -575,7 +575,7 @@ public class SpecialOutlayAllocate : IHttpHandler, IRequiresSessionState
     #endregion 专项经费合并操作
 
     /// <summary>
-    /// 追加经费申请逐级审批,8:部门负责人，9：部门主管领导，4：行财科长，10：行财主管领导
+    /// 追加经费申请逐级审批,8:部门负责人，9：部门主管领导，4：行财科长，10：行财主管领导,6：管理员
     /// </summary>
     public void ApproverApplyOutlay()
     {
@@ -616,6 +616,9 @@ public class SpecialOutlayAllocate : IHttpHandler, IRequiresSessionState
                 break;
             case "10"://行财主管领导
                 updateFields += nextStatus + "FinanceleadAudit=@audit,FinanceleadComment=@comment,FinanceleadAudittime=getdate() ";
+                break;
+            case "6"://管理员，跳过当前审批状态
+                updateFields = " status=status+1 ";
                 break;
             default:
                 updateFields = "";

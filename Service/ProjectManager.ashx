@@ -373,6 +373,9 @@ public class ProjectManager : IHttpHandler, IRequiresSessionState
             case 10://行财主管领导
                 updateFields = nextStatus + "financeleadname=@audituser,FinanceleadAudit=@audit,FinanceleadComment=@comment,FinanceleadAudittime=getdate() ";
                 break;
+            case 6://管理员，跳过当前审批状态
+                updateFields = " status=status+1 ";
+                break;
             default:
                 updateFields = "";
                 break;
