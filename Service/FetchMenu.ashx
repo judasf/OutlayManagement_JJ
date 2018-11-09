@@ -95,7 +95,7 @@ public class FetchMenu : IHttpHandler, IRequiresSessionState
                 menuList.Append("{\"menuid\": \"11\",\"menuname\": \"公务卡支出报销管理\",\"icon\": \"ext-icon-table\",");
                 menuList.Append("\"url\": \"OutlayReimburse/AuditCardReimburse.aspx\",\"iframename\": \"gwkbxgl\"}");
             }
-            if (roleid == 3 || roleid == 4 || roleid == 6 || roleid == 7|| roleid == 10)//出纳,处长,管理员,浏览用户,行财主管领导
+            if (roleid == 3 || roleid == 4 || roleid == 6 || roleid == 7 || roleid == 10)//出纳,处长,管理员,浏览用户,行财主管领导
             {
 
                 menuList.Append("{\"menuid\": \"11\",\"menuname\": \"现金支出报销管理\",\"icon\": \"ext-icon-table\",");
@@ -126,7 +126,7 @@ public class FetchMenu : IHttpHandler, IRequiresSessionState
                 menuList.Append("{\"menuid\": \"11\",\"menuname\": \"扣减经费管理\",\"icon\": \"ext-icon-table\",");
                 menuList.Append("\"url\": \"OutlayDeduct/DeductOutlayApplyDetail.aspx\",\"iframename\": \"kjjfgl\"}");
             }
-            if (roleid == 2 || roleid == 6 || roleid == 7|| roleid == 10)//稽核,管理员，浏览用户，行财主管领导
+            if (roleid == 2 || roleid == 6 || roleid == 7 || roleid == 10)//稽核,管理员，浏览用户，行财主管领导
             {
                 menuList.Append("{\"menuid\": \"11\",\"menuname\": \"公用经费管理\",\"icon\": \"ext-icon-table\",");
                 menuList.Append("\"url\": \"OutLayApply/CreatePublicOutlay.aspx\",\"iframename\": \"gyjfsc\"},");
@@ -181,10 +181,14 @@ public class FetchMenu : IHttpHandler, IRequiresSessionState
                         menuList.Append(",{\"menuid\": \"14\",\"menuname\": \"数据统计\",\"icon\": \"ext-icon-table\",");
                         menuList.Append("\"url\":\"DataStatistics/AuditStatisticsTabs.aspx\",\"iframename\": \"sjtj\"}");
                     }
-                    if (roleid == 2 || roleid == 4 || roleid == 6|| roleid == 10)//稽核，行财科长，管理员，行财主管领导
+                    if (roleid == 2 || roleid == 4 || roleid == 6 || roleid == 10)//稽核，行财科长，管理员，行财主管领导
                     {
                         menuList.Append(",{\"menuid\": \"14\",\"menuname\": \"可用额度查询\",\"icon\": \"ext-icon-table\",");
                         menuList.Append("\"url\":\"DataStatistics/UnUsedOutlayDetail.aspx\",\"iframename\": \"kyedcx\"}");
+                        menuList.Append(",{\"menuid\": \"14\",\"menuname\": \"年度经费结余\",\"icon\": \"ext-icon-table\",");
+                        menuList.Append("\"url\":\"DataStatistics/AnnualBalanceDetial.aspx\",\"iframename\": \"ndjfjy\"}");
+                        menuList.Append(",{\"menuid\": \"14\",\"menuname\": \"单位对账单\",\"icon\": \"ext-icon-table\",");
+                        menuList.Append("\"url\":\"DataStatistics/AccountStatementInfo.aspx\",\"iframename\": \"dwdzd\"}");
                     }
                     if (roleid == 6)
                     {
@@ -203,6 +207,10 @@ public class FetchMenu : IHttpHandler, IRequiresSessionState
                 menuList.Append("\"url\":\"NoticeInfo/NoticeInfo.aspx\",\"iframename\": \"yjxx\"},");
                 menuList.Append("{\"menuid\": \"14\",\"menuname\": \"数据统计\",\"icon\": \"ext-icon-table\",");
                 menuList.Append("\"url\":\"DataStatistics/BaseUserStatisticsTabs.aspx\",\"iframename\": \"sjtj\"}");
+                menuList.Append(",{\"menuid\": \"14\",\"menuname\": \"年度经费结余\",\"icon\": \"ext-icon-table\",");
+                menuList.Append("\"url\":\"DataStatistics/AnnualBalanceDetial.aspx\",\"iframename\": \"ndjfjy\"}");
+                menuList.Append(",{\"menuid\": \"14\",\"menuname\": \"单位对账单\",\"icon\": \"ext-icon-table\",");
+                menuList.Append("\"url\":\"DataStatistics/AccountStatementInfo.aspx\",\"iframename\": \"dwdzd\"}");
             }
             //accordion 尾
             menuList.Append("]}");
@@ -215,7 +223,7 @@ public class FetchMenu : IHttpHandler, IRequiresSessionState
             {
                 menuList.Append("{\"menuid\": \"11\",\"menuname\": \"全部申报项目\",\"icon\": \"ext-icon-table\",");
                 menuList.Append("\"url\": \"ProjectManager/ProjectManager_All.aspx\",\"iframename\": \"xmsb\"}");
-               
+
                 if (roleid == 8)
                 {
                     menuList.Append(",{\"menuid\": \"11\",\"menuname\": \"待审批项目\",\"icon\": \"ext-icon-table\",");

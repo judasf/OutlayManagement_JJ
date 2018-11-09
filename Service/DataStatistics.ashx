@@ -32,6 +32,10 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
     /// 管辖范围
     /// </summary>
     string scopeDepts;
+    /// <summary>
+    /// 角色编号
+    /// </summary>
+    string roleid;
     public void ProcessRequest(HttpContext context)
     {
         //不让浏览器缓存
@@ -59,6 +63,7 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
             deptid = ud.LoginUser.DeptId.ToString();
             deptName = ud.LoginUser.UserDept;
             scopeDepts = ud.LoginUser.ScopeDepts;
+            roleid = ud.LoginUser.RoleId.ToString();
         }
         string method = HttpContext.Current.Request.PathInfo.Substring(1);
         if (method.Length != 0)
@@ -145,7 +150,7 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
     /// </summary>
     public void GetAllDeptOutlayTypeStatisticsForAudit()
     {
-       string sdate = DateTime.Now.ToString("yyyy-01-01");//默认当年1月1日
+        string sdate = DateTime.Now.ToString("yyyy-01-01");//默认当年1月1日
         string edate = DateTime.Now.ToString("yyyy-MM-dd");//默认当天
         string deptid = "";
         //开始日期
@@ -465,7 +470,7 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
             {
                 colIndex++;
                 Cell cell = cells.Add(rowIndex, colIndex, row[col.ColumnName].ToString(), xf);//转换为数字型
-                //如果你数据库里的数据都是数字的话 最好转换一下，不然导入到Excel里是以字符串形式显示。
+                                                                                              //如果你数据库里的数据都是数字的话 最好转换一下，不然导入到Excel里是以字符串形式显示。
                 cell.Font.FontFamily = FontFamilies.Roman; //字体
                 cell.Font.Bold = false;
                 cell.Font.Height = 9 * 20;
@@ -564,7 +569,7 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
             {
                 colIndex++;
                 Cell cell = cells.Add(rowIndex, colIndex, row[col.ColumnName].ToString(), xfCon);//转换为数字型
-                //如果你数据库里的数据都是数字的话 最好转换一下，不然导入到Excel里是以字符串形式显示。
+                                                                                                 //如果你数据库里的数据都是数字的话 最好转换一下，不然导入到Excel里是以字符串形式显示。
                 cell.Font.FontFamily = FontFamilies.Roman; //字体
             }
 
@@ -724,7 +729,7 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
             new SqlParameter("@deptid",deptid),
             new SqlParameter("balance",balance)
         };
-        int result = SqlHelper.ExecuteNonQuery(SqlHelper.GetConnection(), CommandType.Text, sql,paras);
+        int result = SqlHelper.ExecuteNonQuery(SqlHelper.GetConnection(), CommandType.Text, sql, paras);
         if (result == 1)
             Response.Write("{\"success\":true,\"msg\":\"额度修正成功\"}");
         else
@@ -782,7 +787,317 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
         Response.Write(JsonConvert.GetJsonFromDataTable(ds, total));
     }
     #endregion
+    #region 年度经费结余页面
+    /// <summary>
+    /// 设置年度经费结余页面查询条件
+    /// </summary>
+    /// <returns></returns>
+    public string SetQueryConditionForAnnualBalance()
+    {
+        string queryStr = "";
+        //设置查询条件
+        List<string> list = new List<string>();
 
+        //按单位查询
+        if (roleid == "1")
+            list.Add(" a.deptid ='" + deptid + "'");
+        else
+        {
+            if (!string.IsNullOrEmpty(Request.Form["deptId"]))
+                list.Add(" a.deptid ='" + Request.Form["deptId"] + "'");
+        }
+        //按结余年度
+        if (!string.IsNullOrEmpty(Request.Form["outlayyear"]))
+            list.Add(" b.outlayyear ='" + Request.Form["outlayyear"] + "'");
+        if (list.Count > 0)
+            queryStr = string.Join(" and ", list.ToArray());
+        return queryStr;
+    }
+    /// <summary>
+    /// 获取年度结余额度明细
+    /// </summary>
+    public void GetAnnualBalanceDetail()
+    {
+        int total = 0;
+        string where = SetQueryConditionForAnnualBalance();
+        string tableName = " Department AS a  JOIN (SELECT * FROM AnnualBalanceDetail) AS b ON a.DeptID=b.DeptID";
+        string fieldStr = "a.DeptName,b.*";
+        DataSet ds = SqlHelper.GetPagination(tableName.ToString(), fieldStr, Request.Form["sort"].ToString(), Request.Form["order"].ToString(), where, Convert.ToInt32(Request.Form["rows"]), Convert.ToInt32(Request.Form["page"]), out total);
+        Response.Write(JsonConvert.GetJsonFromDataTable(ds, total));
+    }
+    /// <summary>
+    /// 提取上面结余经费
+    /// </summary>
+    public void FetchAnnualBalance()
+    {
+        //设置额度年份
+        string outlayyear = DateTime.Now.AddYears(-1).Year.ToString();
+        ////设置操作日期限制，每年的元月1日-3日可进行操作
+        //if (Convert.ToDateTime(DateTime.Now.ToString("yyyy-MM-dd")).CompareTo(Convert.ToDateTime(outlayyear + "-01-01")) < 0 || Convert.ToDateTime(DateTime.Now.ToString("yyyy-MM-dd")).CompareTo(Convert.ToDateTime(outlayyear + "-01-03")) > 0)
+        //{
+        //    Response.Write("{\"success\":false,\"msg\":\"请在每年元月1日至3日进行此项操作！\"}");
+        //    return;
+        //}
+
+        StringBuilder sql = new StringBuilder();
+        sql.Append(" IF NOT Exists(SELECT * FROM AnnualBalanceDetail where OutlayYear=@outlayyear) ");
+        sql.Append(" BEGIN ");
+        sql.Append(" INSERT  INTO dbo.AnnualBalanceDetail ( DeptID, OutlayID, memo, UnusedOutlay,OutlayYear )       SELECT  DeptId, 0, '公用经费', UnusedOutlay,@outlayyear FROM PublicOutlay; ");
+        sql.Append(" INSERT  INTO dbo.AnnualBalanceDetail( DeptID, OutlayID, memo, UnusedOutlay,OutlayYear ) SELECT  DeptId, OutlayId, UseFor, UnusedOutlay, @outlayyear FROM SpecialOutlay WHERE   UnusedOutlay <> 0; ");
+        sql.Append(" END ");
+        int result = SqlHelper.ExecuteNonQuery(SqlHelper.GetConnection(), CommandType.Text, sql.ToString(), new SqlParameter("@outlayyear", outlayyear));
+        if (result >= 1)
+            Response.Write("{\"success\":true,\"msg\":\"执行出错\"}");
+        else
+            Response.Write("{\"success\":false,\"msg\":\"" + outlayyear + "年的结余经费数据已提取！\"}");
+    }
+    #endregion
+    #region 单位对账单
+    /// <summary>
+    /// 获取单位对账单信息
+    /// </summary>
+    public void GetAccountStatementInfo()
+    {
+        //设置额度年份,默认当年
+        string outlayyear = DateTime.Now.Year.ToString();
+        //单位编号
+        string did = "";
+        //按单位查询
+        if (roleid == "1")
+            did = deptid;
+        else
+        {
+            if (!string.IsNullOrEmpty(Request.Form["deptId"]))
+                did = Request.Form["deptId"];
+        }
+        //按年度
+        if (!string.IsNullOrEmpty(Request.Form["outlayyear"]))
+            outlayyear = Request.Form["outlayyear"];
+        SqlParameter[] paras = new SqlParameter[]
+        {
+            new SqlParameter("@outlaybalanceyear", int.Parse(outlayyear)-1),
+            new SqlParameter("@outlayyear", outlayyear),
+            new SqlParameter("@deptid", did)
+        };
+        StringBuilder sql = new StringBuilder();
+        //全部合计
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'合计' AS memo,CONVERT(VARCHAR(50),SUM(income)) AS income, CONVERT(VARCHAR(50),SUM(payout)) AS payout FROM (");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,SUM(UnusedOutlay) AS income,'0' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,SUM(MonthOutlay)AS income ,'0'AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,SUM(AllOutlay)AS income ,'0'AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'扣减经费（小计）'AS memo,'-'+ CAST(SUM(DeductOutlay) AS nvarchar(50))AS income ,'0'AS payout FROM dbo.DeductOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear  ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'现金支出（小计）'AS memo,'0' AS income ,SUM(AuditCashOutlay) AS payout FROM dbo.Reimburse_CashPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION  SELECT ''AS m,'' AS d,'' AS cn ,'转账支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_AccountPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION SELECT ''AS m,'' AS d,'' AS cn ,'公务卡支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_CardPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ) AS AllInandOut");
+        sql.Append(" UNION ALL ");
+        //上年结余小计 ,上年结余
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,CONVERT(VARCHAR(50),SUM(UnusedOutlay)) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid   UNION ALL  SELECT ''AS m,'' AS d,CONVERT(NVARCHAR(50),outlayid) AS cn,memo,CONVERT(VARCHAR(50),UnusedOutlay) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
+        sql.Append(" UNION ALL ");
+        //公用经费小计 ,公用经费
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(MonthOutlay))AS income ,''AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear  UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,''AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),MonthOutlay) AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //专项经费小计,专项经费
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(AllOutlay))AS income ,''AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,OutlayTime)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,OutlayTime)) AS d,CONVERT(NVARCHAR(50),a.OutlayId) AS cn,cname AS memo,CONVERT(VARCHAR(50),a.AllOutlay) AS income,'' AS payout FROM dbo.SpecialOutlay a LEFT JOIN dbo.Category b ON a.OutlayCategory=b.CID  WHERE DeptID=@deptid AND  DATEPART(YEAR,Outlaytime)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //扣减经费小计,扣减经费
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'扣减经费（小计）'AS memo,'-'+ CAST(SUM(DeductOutlay) AS nvarchar(50))AS income ,''AS payout FROM dbo.DeductOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,ApproveTime)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,ApproveTime)) AS d,CONVERT(VARCHAR(50),DeductNo) AS cn ,DeductReason AS memo,'-'+CAST(DeductOutlay AS nvarchar(50)) AS income,'' AS payout FROM dbo.DeductOutlayDetail WHERE status=2 AND DeptID=@deptid AND  DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //现金支出小计,现金支出
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'现金支出（小计）'AS memo,'' AS income ,CONVERT(VARCHAR(50),SUM(AuditCashOutlay)) AS payout FROM dbo.Reimburse_CashPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,AuditDate)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,AuditDate)) AS d,CONVERT(VARCHAR(50),ReimburseNo) AS cn ,ExpenseSubject AS memo,'' AS income,CONVERT(VARCHAR(50),AuditCashOutlay) AS payout FROM dbo.Reimburse_CashPay WHERE  status>2 AND DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //转账支出小计,转账支出
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'转账支出（小计）'AS memo,'' AS income ,CONVERT(VARCHAR(50),SUM(ReimburseOutlay)) AS payout FROM dbo.Reimburse_AccountPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION  all SELECT  CONVERT(VARCHAR(50),DATEPART(MONTH,AuditDate)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,AuditDate)) AS d,CONVERT(VARCHAR(50),ReimburseNo) AS cn ,ExpenseSubject AS memo,'' AS income,CONVERT(VARCHAR(50),ReimburseOutlay) AS payout FROM dbo.Reimburse_AccountPay WHERE  status>2 AND DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear  ");
+        sql.Append(" UNION ALL ");
+        //公务卡支出小计,公务卡支出
+        sql.Append("  SELECT  ''AS m,'' AS d,'' AS cn ,'公务卡支出（小计）'AS memo,'' AS income ,CONVERT(VARCHAR(50),SUM(ReimburseOutlay)) AS payout FROM dbo.Reimburse_CardPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear  UNION all  SELECT  CONVERT(VARCHAR(50),DATEPART(MONTH,AuditDate)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,AuditDate)) AS d,CONVERT(VARCHAR(50),ReimburseNo) AS cn ,ExpenseSubject AS memo,'' AS income,CONVERT(VARCHAR(50),ReimburseOutlay) AS payout FROM dbo.Reimburse_CardPay WHERE  status>2 AND DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ");
+
+
+        DataSet ds = SqlHelper.ExecuteDataset(SqlHelper.GetConnection(), CommandType.Text, sql.ToString(), paras);
+        Response.Write(JsonConvert.GetJsonFromDataTable(ds));
+    }
+    /// <summary>
+    /// 生成单位对账单excel
+    /// </summary>
+    /// <param name="dt">获取DataSet数据集</param>
+    /// <param name="xlsName">报表表名</param>
+    /// <param name="secLineStr">第二行显示内容</param>
+    private void CreateAccountStatementXls(DataTable dt, string xlsName, string secLineStr, string outlayyear)
+    {
+        XlsDocument xls = new XlsDocument();
+        xls.FileName = Server.UrlEncode(xlsName);
+        int rowIndex = 4;
+        int colIndex = 0;
+        Worksheet sheet = xls.Workbook.Worksheets.Add("sheet");//状态栏标题名称
+        Cells cells = sheet.Cells;
+        //设置列格式
+        ColumnInfo colInfo = new ColumnInfo(xls, sheet);
+        colInfo.ColumnIndexStart = 0;
+        colInfo.ColumnIndexEnd = 5;
+        colInfo.Width = 18 * 256;
+        sheet.AddColumnInfo(colInfo);
+        //设置标题样式
+        XF xfTitle = xls.NewXF();
+        xfTitle.HorizontalAlignment = HorizontalAlignments.Centered;
+        xfTitle.VerticalAlignment = VerticalAlignments.Centered;
+        xfTitle.TextWrapRight = true;
+        xfTitle.UseBorder = true;
+        xfTitle.TopLineStyle = 1;
+        xfTitle.TopLineColor = Colors.Black;
+        xfTitle.BottomLineStyle = 1;
+        xfTitle.BottomLineColor = Colors.Black;
+        xfTitle.LeftLineStyle = 1;
+        xfTitle.LeftLineColor = Colors.Black;
+        xfTitle.RightLineStyle = 1;
+        xfTitle.RightLineColor = Colors.Black;
+        xfTitle.Font.Bold = true;
+        xfTitle.Font.Height = 16 * 20;
+        //设置单位或日期样式
+        XF xfSec = xls.NewXF();
+        xfSec.HorizontalAlignment = HorizontalAlignments.Left;
+        xfSec.VerticalAlignment = VerticalAlignments.Centered;
+        xfSec.TextWrapRight = true;
+        xfSec.UseBorder = true;
+        xfSec.TopLineStyle = 1;
+        xfSec.TopLineColor = Colors.Black;
+        xfSec.BottomLineStyle = 1;
+        xfSec.BottomLineColor = Colors.Black;
+        xfSec.LeftLineStyle = 1;
+        xfSec.LeftLineColor = Colors.Black;
+        xfSec.RightLineStyle = 1;
+        xfSec.RightLineColor = Colors.Black;
+        xfSec.Font.Bold = false;
+        //设置内容
+        XF xfCon = xls.NewXF();
+        xfCon.HorizontalAlignment = HorizontalAlignments.Centered;
+        xfCon.VerticalAlignment = VerticalAlignments.Centered;
+        xfCon.TextWrapRight = true;
+        xfCon.UseBorder = true;
+        xfCon.TopLineStyle = 1;
+        xfCon.TopLineColor = Colors.Black;
+        xfCon.BottomLineStyle = 1;
+        xfCon.BottomLineColor = Colors.Black;
+        xfCon.LeftLineStyle = 1;
+        xfCon.LeftLineColor = Colors.Black;
+        xfCon.RightLineStyle = 1;
+        xfCon.RightLineColor = Colors.Black;
+        xfCon.Font.Bold = false;
+        //设置合计行样式
+        XF xfsumrow = xls.NewXF();
+        xfsumrow.Pattern = 1; // 单元格填充风格。如果设定为0，则是纯色填充(无色)，1代表没有间隙的实色 
+        xfsumrow.PatternColor = Colors.Default2F; // 填充背景色
+                                                  //
+        MergeRegion(ref sheet, xfTitle, xlsName.Substring(0, xlsName.Length - 4), 1, 1, 1, 6);
+        MergeRegion(ref sheet, xfSec, secLineStr, 2, 2, 1, 4);
+        MergeRegion(ref sheet, xfSec, "金额单位：元", 2, 2, 5, 6);
+        MergeRegion(ref sheet, xfCon, outlayyear + "年", 3, 3, 1, 2);
+        MergeRegion(ref sheet, xfCon, "月", 4, 4, 1, 1);
+        MergeRegion(ref sheet, xfCon, "日", 4, 4, 2, 2);
+        MergeRegion(ref sheet, xfCon, "凭证编号", 3, 4, 3, 3);
+        MergeRegion(ref sheet, xfCon, "摘要", 3, 4, 4, 4);
+        MergeRegion(ref sheet, xfCon, "收入", 3, 4, 5, 5);
+        MergeRegion(ref sheet, xfCon, "支出", 3, 4, 6, 6);
+        //填充数据
+        foreach (DataRow row in dt.Rows)
+        {
+            rowIndex++;
+            colIndex = 0;
+            foreach (DataColumn col in dt.Columns)
+            {
+                colIndex++;
+                Cell cell;
+                if (row[col.ColumnName].ToString().IndexOf("小计") > 0)
+                    cell = cells.Add(rowIndex, colIndex, row[col.ColumnName].ToString(), xfsumrow);//转换为数字型
+
+                else
+                    cell = cells.Add(rowIndex, colIndex, row[col.ColumnName].ToString(), xfCon);//转换为数字型
+                                                                                                //如果你数据库里的数据都是数字的话 最好转换一下，不然导入到Excel里是以字符串形式显示。
+                cell.Font.FontFamily = FontFamilies.Roman; //字体
+            }
+
+        }
+        //MergeRegion(ref sheet, xfCon, dt.Columns[0].ColumnName, 3, 4, 1, 1);
+        //设置行高
+        sheet.Rows[1].RowHeight = 24 * 20;
+        xls.Send();
+        Response.Flush();
+        Response.End();
+    }
+    //导出对账单到Excel
+    public void ExportAccountStatement()
+    {
+        //设置额度年份,默认当年
+        string outlayyear = DateTime.Now.Year.ToString();
+        //单位编号
+        string did = "";
+        //单位名称
+        string dname = "";
+        //按单位查询
+        if (roleid == "1")
+        {
+            did = deptid;
+            dname = deptName;
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(Request.Form["deptId"]))
+                did = Request.Form["deptId"];
+            if (!string.IsNullOrEmpty(Request.Form["deptname"]))
+                dname = Request.Form["deptname"];
+        }
+        //按年度
+        if (!string.IsNullOrEmpty(Request.Form["outlayyear"]))
+            outlayyear = Request.Form["outlayyear"];
+        SqlParameter[] paras = new SqlParameter[]
+        {
+            new SqlParameter("@outlaybalanceyear", int.Parse(outlayyear)-1),
+            new SqlParameter("@outlayyear", outlayyear),
+            new SqlParameter("@deptid", did)
+        };
+        StringBuilder sql = new StringBuilder();
+        //全部合计
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'合计' AS memo,CONVERT(VARCHAR(50),SUM(income)) AS income, CONVERT(VARCHAR(50),SUM(payout)) AS payout FROM (");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,SUM(UnusedOutlay) AS income,'0' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,SUM(MonthOutlay)AS income ,'0'AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,SUM(AllOutlay)AS income ,'0'AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'扣减经费（小计）'AS memo,'-'+ CAST(SUM(DeductOutlay) AS nvarchar(50))AS income ,'0'AS payout FROM dbo.DeductOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear  ");
+        sql.Append(" UNION ");
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'现金支出（小计）'AS memo,'0' AS income ,SUM(AuditCashOutlay) AS payout FROM dbo.Reimburse_CashPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION  SELECT ''AS m,'' AS d,'' AS cn ,'转账支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_AccountPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION SELECT ''AS m,'' AS d,'' AS cn ,'公务卡支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_CardPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ) AS AllInandOut");
+        sql.Append(" UNION ALL ");
+        //上年结余小计 ,上年结余
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,CONVERT(VARCHAR(50),SUM(UnusedOutlay)) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid   UNION ALL  SELECT ''AS m,'' AS d,CONVERT(NVARCHAR(50),outlayid) AS cn,memo,CONVERT(VARCHAR(50),UnusedOutlay) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
+        sql.Append(" UNION ALL ");
+        //公用经费小计 ,公用经费
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(MonthOutlay))AS income ,''AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear  UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,''AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),MonthOutlay) AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //专项经费小计,专项经费
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(AllOutlay))AS income ,''AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,OutlayTime)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,OutlayTime)) AS d,CONVERT(NVARCHAR(50),a.OutlayId) AS cn,cname AS memo,CONVERT(VARCHAR(50),a.AllOutlay) AS income,'' AS payout FROM dbo.SpecialOutlay a LEFT JOIN dbo.Category b ON a.OutlayCategory=b.CID  WHERE DeptID=@deptid AND  DATEPART(YEAR,Outlaytime)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //扣减经费小计,扣减经费
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'扣减经费（小计）'AS memo,'-'+ CAST(SUM(DeductOutlay) AS nvarchar(50))AS income ,''AS payout FROM dbo.DeductOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,ApproveTime)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,ApproveTime)) AS d,CONVERT(VARCHAR(50),DeductNo) AS cn ,DeductReason AS memo,'-'+CAST(DeductOutlay AS nvarchar(50)) AS income,'' AS payout FROM dbo.DeductOutlayDetail WHERE status=2 AND DeptID=@deptid AND  DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //现金支出小计,现金支出
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'现金支出（小计）'AS memo,'' AS income ,CONVERT(VARCHAR(50),SUM(AuditCashOutlay)) AS payout FROM dbo.Reimburse_CashPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,AuditDate)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,AuditDate)) AS d,CONVERT(VARCHAR(50),ReimburseNo) AS cn ,ExpenseSubject AS memo,'' AS income,CONVERT(VARCHAR(50),AuditCashOutlay) AS payout FROM dbo.Reimburse_CashPay WHERE  status>2 AND DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ");
+        sql.Append(" UNION ALL ");
+        //转账支出小计,转账支出
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'转账支出（小计）'AS memo,'' AS income ,CONVERT(VARCHAR(50),SUM(ReimburseOutlay)) AS payout FROM dbo.Reimburse_AccountPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION  all SELECT  CONVERT(VARCHAR(50),DATEPART(MONTH,AuditDate)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,AuditDate)) AS d,CONVERT(VARCHAR(50),ReimburseNo) AS cn ,ExpenseSubject AS memo,'' AS income,CONVERT(VARCHAR(50),ReimburseOutlay) AS payout FROM dbo.Reimburse_AccountPay WHERE  status>2 AND DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear  ");
+        sql.Append(" UNION ALL ");
+        //公务卡支出小计,公务卡支出
+        sql.Append("  SELECT ''AS m,'' AS d,'' AS cn ,'公务卡支出（小计）'AS memo,'' AS income ,CONVERT(VARCHAR(50),SUM(ReimburseOutlay)) AS payout FROM dbo.Reimburse_CardPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear  UNION all SELECT  CONVERT(VARCHAR(50),DATEPART(MONTH,AuditDate)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,AuditDate)) AS d,CONVERT(VARCHAR(50),ReimburseNo) AS cn ,ExpenseSubject AS memo,'' AS income,CONVERT(VARCHAR(50),ReimburseOutlay) AS payout FROM dbo.Reimburse_CardPay WHERE  status>2 AND DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ");
+
+
+        DataSet ds = SqlHelper.ExecuteDataset(SqlHelper.GetConnection(), CommandType.Text, sql.ToString(), paras);
+        DataTable dt = ds.Tables[0];
+        string deptStr = "单位名称：" + dname;
+        CreateAccountStatementXls(dt, "单位对账单.xls", deptStr, outlayyear);
+        Response.Flush();
+        Response.End();
+    }
+    #endregion
     public bool IsReusable
     {
         get
