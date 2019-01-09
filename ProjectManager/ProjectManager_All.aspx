@@ -172,10 +172,10 @@
                                    return '部门主管领导审批中'
                                    break;
                                case '3':
-                                   return '行财部门审核中'
+                                   return '财务部门审核中'
                                    break;
                                case '4':
-                                   return '行财领导审批中'
+                                   return '财务领导审批中'
                                    break;
                                case '5':
                                    return '审批完结'
@@ -279,7 +279,7 @@
                         </td>
                         <td>
                             <input id="status" class="easyui-combobox" name="status" style="width: 120px"
-                                data-options="panelHeight:'auto',editable:false,valueField:'value',textField:'text',data:[{'value':'','text':'全部'},{'value':'-1','text':'已退回'},{'value':'1','text':'部门负责人审核中'},{'value':'2','text':'部门主管领导审批中'},{'value':'3','text':'行财部门审核中'},{'value':'4','text':'行财主管领导审批中'},{'value':'5','text':'已完结'}]" />
+                                data-options="panelHeight:'auto',editable:false,valueField:'value',textField:'text',data:[{'value':'','text':'全部'},{'value':'-1','text':'已退回'},{'value':'1','text':'部门负责人审核中'},{'value':'2','text':'部门主管领导审批中'},{'value':'3','text':'财务部门审核中'},{'value':'4','text':'财务主管领导审批中'},{'value':'5','text':'已完结'}]" />
                         </td>
                         <td colspan="6" style="padding-left: 30px;">
                             <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'ext-icon-magnifier',plain:true"

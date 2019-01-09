@@ -80,7 +80,7 @@
                     panelsHref = 'Director/UnReadNotice.aspx';
                     break;
                 case 4: //处长
-                case 10: //行财主管领导
+                case 10: //财务主管领导
                     panelsTitle = ['经费审批', '意见信箱'];
                     panelsHref = ['Director/OutlayApprove.aspx', 'Director/UnReadNotice.aspx'];
                     break;

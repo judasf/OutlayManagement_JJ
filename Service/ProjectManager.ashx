@@ -370,7 +370,7 @@ public class ProjectManager : IHttpHandler, IRequiresSessionState
             case 4://行财科长
                 updateFields = nextStatus + "financemananame=@audituser,FinancemanaAudit=@audit,FinancemanaComment=@comment,FinancemanaAudittime=getdate() ";
                 break;
-            case 10://行财主管领导
+            case 10://财务主管领导
                 updateFields = nextStatus + "financeleadname=@audituser,FinanceleadAudit=@audit,FinanceleadComment=@comment,FinanceleadAudittime=getdate() ";
                 break;
             case 6://管理员，跳过当前审批状态
@@ -432,6 +432,28 @@ public class ProjectManager : IHttpHandler, IRequiresSessionState
                 }
             }
         }
+    }
+    /// <summary>
+    /// 更新项目时间
+    /// </summary>
+    public void EditProjectInfoTimeByID()
+    {
+        int id = 0;
+        int.TryParse(Request.Form["id"], out id);
+        string inputtime = Convert.ToString(Request.Form["inputtime"]);
+        string dmtime = Convert.ToString(Request.Form["dmtime"]);
+        string dltime = Convert.ToString(Request.Form["dltime"]);
+        string fmtime = Convert.ToString(Request.Form["fmtime"]);
+        string fltime = Convert.ToString(Request.Form["fltime"]);
+        string updateFields = "inputtime=@inputtime,deptmanaaudittime=@dmtime,deptleadaudittime=@dltime,FinancemanaAudittime=@fmtime,FinanceleadAudittime=@fltime "; ;
+        string sql = "update ProjectApplyInfo set " + updateFields + " where id=@id";
+        SqlParameter[] paras = new SqlParameter[] {
+            new SqlParameter("@id",id),new SqlParameter("@inputtime",inputtime),new SqlParameter("@dmtime",dmtime),new SqlParameter("@dltime",dltime),new SqlParameter("@fmtime",fmtime),new SqlParameter("@fltime",fltime)};
+        int result = SqlHelper.ExecuteNonQuery(SqlHelper.GetConnection(), CommandType.Text, sql, paras);
+        if (result == 1)
+            Response.Write("{\"success\":true,\"msg\":\"执行成功\"}");
+        else
+            Response.Write("{\"success\":false,\"msg\":\"执行出错\"}");
     }
     #region 生成word文档
     /// <summary>

@@ -154,8 +154,8 @@
 
             </tr>
             <tr class="auditTr">
-                <td id="fm">行财部门意见：</td>
-                <td id="fl">行财主管领导意见：</td>
+                <td id="fm">财务部门意见：</td>
+                <td id="fl">财务主管领导意见：</td>
 
             </tr>
         </table>

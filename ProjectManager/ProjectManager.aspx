@@ -105,6 +105,27 @@
                 }]
             });
         };
+        //编辑项目时间
+        var editTimeFun = function (id) {
+            var dialog = parent.$.modalDialog({
+                title: '编辑',
+                width: 800,
+                height: 600,
+                iconCls: 'icon-edit',
+                href: 'ProjectManager/dialogop/EditProjectInfoTime_op.aspx?id=' + id,
+                buttons: [{
+                    text: '更新',
+                    handler: function () {
+                        parent.onFormSubmit(dialog, pjGrid);
+                    }
+                }, {
+                    text: '关闭',
+                    handler: function () {
+                        dialog.dialog('close');
+                    }
+                }]
+            });
+        };
         //显示费用申请信息详情
         var viewProjectDetail = function (id, status) {
             var btns = [{
@@ -198,7 +219,7 @@
                     {
                         title: '操作',
                         field: 'action',
-                        width: '80',
+                        width: '120',
                         halign: 'center',
                         align: 'center',
                         formatter: function (value, row) {
@@ -209,10 +230,13 @@
                             //    str += $.formatString('<a style="margin:0 2px;" href="javascript:void(0)" onclick="delProjectInfo(\'{0}\');">删除</a>', row.pjno);
                             //}
                             if ((row.status == 1 && roleid == 8) || (row.status == 2 && roleid == 9) || (row.status == 3 && roleid == 4) || (row.status == 4 && roleid == 10)) {//项目审批
-                                str += $.formatString('<a href="javascript:void(0)" onclick="auditFun(\'{0}\');">项目审批</a>', row.id);
+                                str += $.formatString('<a href="javascript:void(0)" onclick="auditFun(\'{0}\');">项目审批</a>&nbsp;', row.id);
                             }
                             if (row.status == 5) { //已完结申请可导出word
-                                str += $.formatString('<a href="javascript:void(0)" onclick="viewProjectDetail(\'{0}\',\'{1}\');">打印申请表</a>', row.id,row.status);
+                                str += $.formatString('<a href="javascript:void(0)" onclick="viewProjectDetail(\'{0}\',\'{1}\');">打印申请表</a>&nbsp;', row.id, row.status);
+                            }
+                            if (roleid == 6) {//管理员可编辑发起和审批时间
+                                str += $.formatString('<a style="margin:0 2px;" href="javascript:void(0)" onclick="editTimeFun(\'{0}\');">编辑</a>&nbsp;', row.id);
                             }
                             return str;
                         }
@@ -244,10 +268,10 @@
                                 return '部门主管领导审批中'
                                 break;
                             case '3':
-                                return '行财部门审核中'
+                                return '财务部门审核中'
                                 break;
                             case '4':
-                                return '行财主管领导审批中'
+                                return '财务主管领导审批中'
                                 break;
                             case '5':
                                 return '审批完结'
@@ -299,7 +323,7 @@
                     $(this).datagrid('unselectAll');
                 },
                 onDblClickRow: function (index, row) {
-                    viewProjectDetail(row.id,row.status);
+                    viewProjectDetail(row.id, row.status);
                 }
             });
             //设置分页属性

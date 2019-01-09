@@ -2,7 +2,7 @@
 
 <% 
     /** 
-     *SpecialOutlayApplyDetail表操作对话框，追加经费审批。8:部门负责人，9：部门主管领导，4：行财科长，10：行财主管领导
+     *SpecialOutlayApplyDetail表操作对话框，追加经费审批。8:部门负责人，9：部门主管领导，4：行财科长，10：财务主管领导
      * 
      */
     string id = string.IsNullOrEmpty(Request.QueryString["id"]) ? "" : Request.QueryString["id"].ToString();
@@ -167,10 +167,10 @@
 
         </tr>
         <tr class="auditTr">
-            <td style="text-align: right">行财部门意见：
+            <td style="text-align: right">财务部门意见：
             </td>
             <td id="fm"></td>
-            <td style="text-align: right">行财主管领导意见：
+            <td style="text-align: right">财务主管领导意见：
             </td>
             <td id="fl"></td>
         </tr>

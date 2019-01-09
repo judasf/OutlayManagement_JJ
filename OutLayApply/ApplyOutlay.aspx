@@ -118,7 +118,7 @@
             ]
         });
     };
-    //审批经费,8:部门负责人，9：部门主管领导，4：行财科长，10：行财主管领导
+    //审批经费,8:部门负责人，9：部门主管领导，4：行财科长，10：财务主管领导
     var approverFun = function (id) {
         var dialog = parent.$.modalDialog({
             title: '经费审批',
@@ -271,10 +271,10 @@
                             return '部门主管领导审批中'
                             break;
                         case '3':
-                            return '行财部门审核中'
+                            return '财务部门审核中'
                             break;
                         case '4':
-                            return '行财领导审批中'
+                            return '财务领导审批中'
                             break;
                         case '5':
                             return '审批通过费用生成中'
@@ -407,7 +407,7 @@
                     </td>
                     <td colspan="5">
                         <input name="status" style="width: 120px; text-align: center;" id="status" class="easyui-combobox"
-                            data-options="panelHeight:'auto',editable:false, valueField:'value',textField:'text',data: [{'value':'99','text':'全部'},{'value':'-1','text':'被退回'},{'value':'0','text':'待送审'},{'value':'1','text':'部门负责人审核中'},{'value':'2','text':'部门主管领导审批中'},{'value':'3','text':'行财部门审核中'},{'value':'4','text':'行财主管领导审批中'},{'value':'5','text':'审批通过费用生成中'},{'value':'6','text':'费用已生成'}]" />
+                            data-options="panelHeight:'auto',editable:false, valueField:'value',textField:'text',data: [{'value':'99','text':'全部'},{'value':'-1','text':'被退回'},{'value':'0','text':'待送审'},{'value':'1','text':'部门负责人审核中'},{'value':'2','text':'部门主管领导审批中'},{'value':'3','text':'财务部门审核中'},{'value':'4','text':'财务主管领导审批中'},{'value':'5','text':'审批通过费用生成中'},{'value':'6','text':'费用已生成'}]" />
 
                         <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'ext-icon-magnifier',plain:true"
                             onclick="searchGrid();">查询</a> <a href="javascript:void(0);" class="easyui-linkbutton"

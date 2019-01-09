@@ -141,7 +141,7 @@ public class SpecialOutlayAllocate : IHttpHandler, IRequiresSessionState
                 case "4"://行财科长
                     list.Add(" status=3 ");
                     break;
-                case "10"://行财主管领导
+                case "10"://财务主管领导
                     list.Add(" status=4 ");
                     break;
                 case "2"://稽核员
@@ -575,7 +575,7 @@ public class SpecialOutlayAllocate : IHttpHandler, IRequiresSessionState
     #endregion 专项经费合并操作
 
     /// <summary>
-    /// 追加经费申请逐级审批,8:部门负责人，9：部门主管领导，4：行财科长，10：行财主管领导,6：管理员
+    /// 追加经费申请逐级审批,8:部门负责人，9：部门主管领导，4：行财科长，10：财务主管领导,6：管理员
     /// </summary>
     public void ApproverApplyOutlay()
     {

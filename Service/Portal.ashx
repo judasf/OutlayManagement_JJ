@@ -252,7 +252,7 @@ public class Portal : IHttpHandler, IRequiresSessionState
         StringBuilder sql = new StringBuilder();
         sql.Append("select  convert(varchar(4),datepart(yyyy,FinanceleadAudittime))+'年'+");
         sql.Append("convert(varchar(2),datepart(MM,FinanceleadAudittime))+'月'+convert(varchar(2),datepart(dd,FinanceleadAudittime))+'日'+");
-        sql.Append("'行财主管领导批转'+deptname+'的追加经费申请,请处理' as title ");
+        sql.Append("'财务主管领导批转'+deptname+'的追加经费申请,请处理' as title ");
         sql.Append(" from SpecialOutlayApplyDetail where status=5 " + scopeWhere);
         DataSet ds = SqlHelper.ExecuteDataset(SqlHelper.GetConnection(), CommandType.Text, sql.ToString());
         Response.Write(JsonConvert.GetJsonFromDataTable(ds));

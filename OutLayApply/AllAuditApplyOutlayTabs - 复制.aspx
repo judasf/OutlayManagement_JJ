@@ -15,7 +15,7 @@
     <script src="../js/extJquery.js" type="text/javascript"></script>
     <script src="../js/extEasyUI.js" type="text/javascript"></script>
 </head>
-    <%--追加经费明细tabs——稽核，管理员，浏览用户，行财主管领导--%>
+    <%--追加经费明细tabs——稽核，管理员，浏览用户，财务主管领导--%>
 <%  int roleid = 0;
     if (!Request.IsAuthenticated)
     {%>
