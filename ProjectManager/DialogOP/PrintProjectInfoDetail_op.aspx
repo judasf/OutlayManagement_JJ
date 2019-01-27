@@ -89,15 +89,14 @@
 <style>
     #editBaseInfoForm { font-size: 12px; }
     #editBaseInfoForm table tr td { vertical-align: middle; }
-
     #editBaseInfoForm table tr td.text-right { text-align: right; }
     #editBaseInfoForm table tr td.text-center { text-align: center; }
     #editBaseInfoForm table tr.auditTr td { height: 30px; vertical-align: text-top; }
 </style>
 <form method="post" id="editBaseInfoForm">
     <div id="printDiv">
-        <p style="margin-top:50px;font-size: 1.3em; text-align: center; line-height: 2.3em; font-weight: 700;">安阳市公安局交通管理支队自行采购项目申报表</p>
-        <p style="margin:0 0 0 30px;line-height:30px;">项目编号：<span id="pjno"></span></p>
+        <p style="margin-top: 100px; font-size: 1.3em; text-align: center; line-height: 2.3em; font-weight: 700;">安阳市公安局交通管理支队自行采购项目申报表</p>
+        <p style="margin: 0 0 0 30px; line-height: 30px;">项目编号：<span id="pjno"></span></p>
         <table border="1" bordercolor="#000" style="border-collapse: collapse; margin-left: 20px; margin-right: 20px; width: 95%">
             <tr>
                 <td class="text-center" colspan="2" style="width: 80px;">申报部门

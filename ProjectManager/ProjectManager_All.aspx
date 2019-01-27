@@ -80,6 +80,23 @@
                 }]
             });
         };
+        //删除项目申报
+        var delProjectInfo = function (pjno) {
+            parent.$.messager.confirm('删除确认', '您确认要删除该项目申报表？', function (r) {
+                if (r) {
+                    $.post('../service/ProjectManager.ashx/DelProjectInfoByPjNo',
+                    { pjno: pjno },
+                    function (result) {
+                        if (result.success) {
+                            pjGrid.datagrid('reload');
+                            parent.$.messager.alert('成功', result.msg, 'info');
+                        } else {
+                            parent.$.messager.alert('提示', result.msg, 'error');
+                        }
+                    }, 'json');
+                }
+            });
+        };
         //显示费用申请信息详情
         var viewProjectDetail = function (id, status) {
             var btns = [{
@@ -127,7 +144,7 @@
                 columns: [[{
                     title: '操作',
                     field: 'action',
-                    width: '80',
+                    width: '120',
                     halign: 'center',
                     align: 'center',
                     formatter: function (value, row) {
@@ -141,6 +158,8 @@
                         if (row.status <=0 && roleid == 6) { //被退回和未提交查看详情
                             str += $.formatString('<a href="javascript:void(0)" onclick="viewProjectDetail(\'{0}\',\'{1}\');">查看详情</a>', row.id, row.status);
                         }
+                        if (roleid == 6) //管理员增加删除功能
+                            str += $.formatString('&nbsp;&nbsp;<a style="margin:0 2px;" href="javascript:void(0)" onclick="delProjectInfo(\'{0}\');">删除</a>', row.pjno);
                         return str;
                     }
                 }
