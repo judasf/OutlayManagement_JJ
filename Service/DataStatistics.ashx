@@ -191,8 +191,8 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
         SqlParameter[] paras = new SqlParameter[] {
             new SqlParameter("@scopeDepts",scopeDepts),
             new SqlParameter("@deptid",deptid),
-            new SqlParameter("@smonth",smonth),
-            new SqlParameter("@emonth",emonth)
+            new SqlParameter("@sdate",smonth),
+            new SqlParameter("@edate",emonth)
         };
         DataSet ds = SqlHelper.ExecuteDataset(SqlHelper.GetConnection(), CommandType.StoredProcedure, "GetAllDeptAllOutlayDetailForAudit", paras);
         DataTable dt = new DataTable();
@@ -255,8 +255,8 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
         SqlParameter[] paras = new SqlParameter[] {
             new SqlParameter("@scopeDepts",scopeDepts),
             new SqlParameter("@deptid",deptid),
-            new SqlParameter("@smonth",smonth),
-            new SqlParameter("@emonth",emonth)
+            new SqlParameter("@sdate",smonth),
+            new SqlParameter("@edate",emonth)
         };
         DataSet ds = SqlHelper.ExecuteDataset(SqlHelper.GetConnection(), CommandType.StoredProcedure, "GetAllDeptOutlayTypeStatisticsForAudit", paras);
         DataTable dt = new DataTable();
