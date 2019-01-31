@@ -883,20 +883,37 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
         //全部合计
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'合计' AS memo,CONVERT(VARCHAR(50),SUM(income)) AS income, CONVERT(VARCHAR(50),SUM(payout)) AS payout FROM (");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,SUM(UnusedOutlay) AS income,'0' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
-        sql.Append(" UNION ");
-        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,SUM(MonthOutlay)AS income ,'0'AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
-        sql.Append(" UNION ");
+        sql.Append(" UNION  all");
+        //公用经费小计
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo, SUM(income) AS income ,'0'AS payout FROM ( ");
+        sql.Append("  SELECT  MonthOutlay AS income  FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION all  SELECT  ApplyOutlay  AS income  FROM dbo.AuditApplyOutlayDetail  WHERE status=2 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        sql.Append(" UNION all   SELECT  ApplyOutlay  AS income  FROM dbo.SpecialOutlayApplyDetail  WHERE status=6 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" ) as publicAllOutlay");
+
+        sql.Append(" UNION all ");
+        //专项经费
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,SUM(AllOutlay)AS income ,'0'AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear ");
-        sql.Append(" UNION ");
+        sql.Append(" UNION all ");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'扣减经费（小计）'AS memo,'-'+ CAST(SUM(DeductOutlay) AS nvarchar(50))AS income ,'0'AS payout FROM dbo.DeductOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear  ");
-        sql.Append(" UNION ");
+        sql.Append(" UNION all ");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'现金支出（小计）'AS memo,'0' AS income ,SUM(AuditCashOutlay) AS payout FROM dbo.Reimburse_CashPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION  SELECT ''AS m,'' AS d,'' AS cn ,'转账支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_AccountPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION SELECT ''AS m,'' AS d,'' AS cn ,'公务卡支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_CardPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ) AS AllInandOut");
         sql.Append(" UNION ALL ");
         //上年结余小计 ,上年结余
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,CONVERT(VARCHAR(50),SUM(UnusedOutlay)) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid   UNION ALL  SELECT ''AS m,'' AS d,CONVERT(NVARCHAR(50),outlayid) AS cn,memo,CONVERT(VARCHAR(50),UnusedOutlay) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
         sql.Append(" UNION ALL ");
-        //公用经费小计 ,公用经费
-        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(MonthOutlay))AS income ,''AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear  UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,''AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),MonthOutlay) AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        //公用经费小计 
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(income))AS income ,''AS payout FROM ( ");
+        sql.Append("  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'定额公用'AS cn ,OutlayMonth AS memo,MonthOutlay AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION   SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,ApproveTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,ApproveTime)) AS d,'下发公用'AS cn ,OutlayMonth AS memo,ApplyOutlay  AS income,'' AS payout FROM dbo.AuditApplyOutlayDetail  WHERE status=2 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        sql.Append(" UNION   SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'申请公用'AS cn ,OutlayMonth AS memo,ApplyOutlay  AS income,'' AS payout FROM dbo.SpecialOutlayApplyDetail  WHERE status=6 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" ) as publicAllOutlay");
+        //定额公用经费
+        sql.Append(" UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'定额公用'AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),MonthOutlay) AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        //稽核下发公用
+        sql.Append(" UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,ApproveTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,ApproveTime)) AS d,'下发公用'AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),ApplyOutlay) AS income,'' AS payout FROM dbo.AuditApplyOutlayDetail  WHERE status=2 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        //单位申请公用
+        sql.Append(" UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'申请公用'AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),ApplyOutlay) AS income,'' AS payout FROM dbo.SpecialOutlayApplyDetail  WHERE status=6 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
         sql.Append(" UNION ALL ");
         //专项经费小计,专项经费
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(AllOutlay))AS income ,''AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,OutlayTime)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,OutlayTime)) AS d,CONVERT(NVARCHAR(50),a.OutlayId) AS cn,cname AS memo,CONVERT(VARCHAR(50),a.AllOutlay) AS income,'' AS payout FROM dbo.SpecialOutlay a LEFT JOIN dbo.Category b ON a.OutlayCategory=b.CID  WHERE DeptID=@deptid AND  DATEPART(YEAR,Outlaytime)=@outlayyear ");
@@ -1059,20 +1076,35 @@ public class DataStatistics : IHttpHandler, IRequiresSessionState
         //全部合计
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'合计' AS memo,CONVERT(VARCHAR(50),SUM(income)) AS income, CONVERT(VARCHAR(50),SUM(payout)) AS payout FROM (");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,SUM(UnusedOutlay) AS income,'0' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
-        sql.Append(" UNION ");
-        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,SUM(MonthOutlay)AS income ,'0'AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
-        sql.Append(" UNION ");
+        sql.Append(" UNION All ");
+       //公用经费小计
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo, SUM(income) AS income ,'0'AS payout FROM ( ");
+        sql.Append("  SELECT  MonthOutlay AS income  FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION all  SELECT  ApplyOutlay  AS income  FROM dbo.AuditApplyOutlayDetail  WHERE status=2 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        sql.Append(" UNION all   SELECT  ApplyOutlay  AS income  FROM dbo.SpecialOutlayApplyDetail  WHERE status=6 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" ) as publicAllOutlay");
+        sql.Append(" UNION all ");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,SUM(AllOutlay)AS income ,'0'AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear ");
-        sql.Append(" UNION ");
+        sql.Append(" UNION All ");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'扣减经费（小计）'AS memo,'-'+ CAST(SUM(DeductOutlay) AS nvarchar(50))AS income ,'0'AS payout FROM dbo.DeductOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear  ");
-        sql.Append(" UNION ");
+        sql.Append(" UNION All ");
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'现金支出（小计）'AS memo,'0' AS income ,SUM(AuditCashOutlay) AS payout FROM dbo.Reimburse_CashPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION  SELECT ''AS m,'' AS d,'' AS cn ,'转账支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_AccountPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear UNION SELECT ''AS m,'' AS d,'' AS cn ,'公务卡支出（小计）'AS memo,'0' AS income ,SUM(ReimburseOutlay) AS payout FROM dbo.Reimburse_CardPay  WHERE status>2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditDate)=@outlayyear ) AS AllInandOut");
         sql.Append(" UNION ALL ");
         //上年结余小计 ,上年结余
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn,'上年结余（小计）' AS memo,CONVERT(VARCHAR(50),SUM(UnusedOutlay)) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid   UNION ALL  SELECT ''AS m,'' AS d,CONVERT(NVARCHAR(50),outlayid) AS cn,memo,CONVERT(VARCHAR(50),UnusedOutlay) AS income,'' AS payout FROM dbo.AnnualBalanceDetail WHERE  OutlayYear=@outlaybalanceyear AND DeptID=@deptid ");
         sql.Append(" UNION ALL ");
-        //公用经费小计 ,公用经费
-        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(MonthOutlay))AS income ,''AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear  UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,''AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),MonthOutlay) AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        //公用经费小计 
+        sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'公用经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(income))AS income ,''AS payout FROM ( ");
+        sql.Append("  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'定额公用'AS cn ,OutlayMonth AS memo,MonthOutlay AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" UNION   SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,ApproveTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,ApproveTime)) AS d,'下发公用'AS cn ,OutlayMonth AS memo,ApplyOutlay  AS income,'' AS payout FROM dbo.AuditApplyOutlayDetail  WHERE status=2 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        sql.Append(" UNION   SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'申请公用'AS cn ,OutlayMonth AS memo,ApplyOutlay  AS income,'' AS payout FROM dbo.SpecialOutlayApplyDetail  WHERE status=6 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        sql.Append(" ) as publicAllOutlay");
+        //定额公用经费
+        sql.Append(" UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'定额公用'AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),MonthOutlay) AS income,'' AS payout FROM dbo.PublicOutlayDetail  WHERE status=2 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
+        //稽核下发公用
+        sql.Append(" UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,ApproveTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,ApproveTime)) AS d,'下发公用'AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),ApplyOutlay) AS income,'' AS payout FROM dbo.AuditApplyOutlayDetail  WHERE status=2 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,ApproveTime)=@outlayyear ");
+        //单位申请公用
+        sql.Append(" UNION ALL  SELECT CONVERT(NVARCHAR(50),DATEPART(MONTH,AuditTime)) AS m,CONVERT(NVARCHAR(50),DATEPART(DAY,AuditTime)) AS d,'申请公用'AS cn ,OutlayMonth AS memo,CONVERT(VARCHAR(50),ApplyOutlay) AS income,'' AS payout FROM dbo.SpecialOutlayApplyDetail  WHERE status=6 and dbo.F_GetRootIdByCid(OutlayCategory)=1 AND  DeptID=@deptid AND DATEPART(YEAR,AuditTime)=@outlayyear ");
         sql.Append(" UNION ALL ");
         //专项经费小计,专项经费
         sql.Append(" SELECT ''AS m,'' AS d,'' AS cn ,'专项经费（小计）'AS memo,CONVERT(VARCHAR(50),SUM(AllOutlay))AS income ,''AS payout FROM dbo.SpecialOutlay  WHERE DeptID=@deptid AND DATEPART(YEAR,OUtlaytime)=@outlayyear UNION all SELECT CONVERT(VARCHAR(50),DATEPART(MONTH,OutlayTime)) AS m,CONVERT(VARCHAR(50),DATEPART(DAY,OutlayTime)) AS d,CONVERT(NVARCHAR(50),a.OutlayId) AS cn,cname AS memo,CONVERT(VARCHAR(50),a.AllOutlay) AS income,'' AS payout FROM dbo.SpecialOutlay a LEFT JOIN dbo.Category b ON a.OutlayCategory=b.CID  WHERE DeptID=@deptid AND  DATEPART(YEAR,Outlaytime)=@outlayyear ");

@@ -21,7 +21,7 @@
 <%} %>
 <script type="text/javascript">
     var grid;
-    var addApply = function () {
+    var addAuditApply = function () {
         var dialog = parent.$.modalDialog({
             title: '添加经费申请',
             width: 680,
@@ -70,7 +70,7 @@
             ]
         });
     };
-    var editFun = function (id) {
+    var editAuditFun = function (id) {
         var dialog = parent.$.modalDialog({
             title: '编辑',
             width: 670,
@@ -96,7 +96,7 @@
         });
     };
     //删除经费
-    var removeFun = function (id) {
+    var removeAuditFun = function (id) {
         parent.$.messager.confirm('询问', '您确定要删除该项申请？', function (r) {
             if (r) {
                 $.post('../service/AuditApplyOutlayAllocate.ashx/RemoveAuditApplyOutlay', {
@@ -112,7 +112,7 @@
         });
     };
     //送审申请
-    var sendFun = function (id) {
+    var sendAuditFun = function (id) {
         parent.$.messager.confirm('询问', '您确定要送审该项申请？', function (r) {
             if (r) {
                 $.post('../service/AuditApplyOutlayAllocate.ashx/SendAuditApplyOutlay', {
@@ -166,7 +166,7 @@
             $('#toolBtn').hide();
     };
     //查看详情，并打印
-    var viewFun = function (id) {
+    var viewAuditFun = function (id) {
         var dialog = parent.$.modalDialog({
             title: '详情',
             width: 650,
@@ -340,15 +340,15 @@
                 formatter: function (value, row) {
                     var str = '';
                     if (row.status < 1 && roleid == 2) {
-                        str += $.formatString('<a href="javascript:void(0);" title="编辑" onclick="editFun(\'{0}\');">编辑</a>&nbsp;', row.id);
-                        str += $.formatString('<a href="javascript:void(0);"  title="删除" onclick="removeFun(\'{0}\');">删除</a>&nbsp;', row.id);
-                        str += $.formatString('<a href="javascript:void(0);"  title="送审" onclick="sendFun(\'{0}\');">送审</a>', row.id);
+                        str += $.formatString('<a href="javascript:void(0);" title="编辑" onclick="editAuditFun(\'{0}\');">编辑</a>&nbsp;', row.id);
+                        str += $.formatString('<a href="javascript:void(0);"  title="删除" onclick="removeAuditFun(\'{0}\');">删除</a>&nbsp;', row.id);
+                        str += $.formatString('<a href="javascript:void(0);"  title="送审" onclick="sendAuditFun(\'{0}\');">送审</a>', row.id);
                     }
                     if (row.status == 2) {
                         if (roleid == 6)//管理员退回审批
                             str += $.formatString('<a href="javascript:void(0);" onclick="backHasCreateAuditApplyOutlayToApprove(\'{0}\');">退回审批</a>&nbsp;', row.id);
                         //已生成可用额度，可查看打印
-                        str += $.formatString('<a href="javascript:void(0);" onclick="viewFun(\'{0}\');">详情</a>', row.id);
+                        str += $.formatString('<a href="javascript:void(0);" onclick="viewAuditFun(\'{0}\');">详情</a>', row.id);
                     }
                     return str;
                 }
@@ -446,7 +446,7 @@
       { %>
     <div>
         <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'ext-icon-note_add',plain:true"
-            onclick="addApply();">添加经费申请</a>
+            onclick="addAuditApply();">添加经费申请</a>
         <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'ext-icon-application_form_add',plain:true"
             onclick="addBatchApply();">批量添加经费申请</a>
         <a id="toolBtn" href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'ext-icon-key_go',plain:true"
