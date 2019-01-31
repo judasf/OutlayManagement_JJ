@@ -154,7 +154,7 @@ public class SpecialOutlayAllocate : IHttpHandler, IRequiresSessionState
 
         }
         //根据非基层用户的管辖范围获取记录
-        if (scopeDepts != "0")
+        if (scopeDepts != "0" && (roleid!="1" && roleid!="8" && roleid!="9"))
             list.Add(" deptid in (" + scopeDepts + ") ");
         if (list.Count > 0)
             queryStr = string.Join(" and ", list.ToArray());

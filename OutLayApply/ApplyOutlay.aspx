@@ -226,11 +226,12 @@
                     if ((row.status == 1 && roleid == 8) || (row.status == 2 && roleid == 9) || (row.status == 3 && roleid == 4) || (row.status == 4 && roleid == 10) || (row.status >= 1 && row.status <= 4 && roleid == 6)) {//费用审批
                         str += $.formatString('<a href="javascript:void(0)" onclick="approverFun(\'{0}\');">费用审批</a>', row.id);
                     }
-                    if ((row.status != 1 && roleid == 8) || (row.status != 2 && roleid == 9) || (row.status != 3 && roleid == 4) || (row.status != 4 && roleid == 10) || (row.status != 5 && roleid == 2) || ((row.status<1 || row.status>5) && roleid == 6) || roleid == 7) {//显示详情
+                    if ((row.status != 1 && roleid == 8) || (row.status != 2 && roleid == 9) || (row.status != 3 && roleid == 4) || (row.status != 4 && roleid == 10) || (row.status != 5 && roleid == 2) || ((row.status<1 || row.status>=5) && roleid == 6) || roleid == 7) {//显示详情
                         str += $.formatString('<a href="javascript:void(0);" onclick="viewFun(\'{0}\');">显示详情</a>', row.id);
                     }
-                    if (row.status == 5 && roleid == 2) { //稽核审核生成费用
-                        str += $.formatString('<a href="javascript:void(0)" onclick="auditApproverFun(\'{0}\');">费用生成</a>', row.id);
+                    if (row.status==5 && roleid == 2) { //稽核审核生成费用
+                        str += $.formatString('<a href="javascript:void(0)" onclick="auditApproverFun(\'{0}\');">费用生成</a>&nbsp;&nbsp;', row.id);
+                        str += $.formatString('<a href="javascript:void(0);"  title="删除" onclick="removeFun(\'{0}\');">删除</a>&nbsp;', row.id);
                     }
                     if (row.applytitle == '合计')
                         str = '';
